@@ -264,3 +264,12 @@ async def get_firebase_user(
         )
 
     return user
+
+async def delete_firebase_user(firebase_uid: str):
+    try:
+        firebase_auth.delete_user(firebase_uid)
+    except firebase_auth.UserNotFoundError:
+        # 이미 삭제된 경우는 무시해도 됨
+        pass
+    except Exception as e:
+        raise e

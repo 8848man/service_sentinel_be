@@ -125,7 +125,6 @@ async def list_projects(
 
     repo = ProjectRepository(db)
 
-    print('test000')
     # Firebase authentication (priority 1)
     if authorization:
         user = await get_firebase_user(authorization=authorization, db=db)
@@ -135,7 +134,7 @@ async def list_projects(
             skip=skip,
             limit=limit
         )
-        print('test001')
+        repo.calculate_health_for_projects(projects)
         return projects
 
 
@@ -145,7 +144,6 @@ async def list_projects(
         api_key_repo = APIKeyRepository(db)
         api_key_obj = api_key_repo.find_by_key_value(x_api_key)
 
-        print('test002')
         if not api_key_obj:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -179,10 +177,10 @@ async def list_projects(
         if delegated_project and delegated_project not in projects:
             projects.append(delegated_project)
 
+        repo.calculate_health_for_projects(projects)
         return projects[skip:skip+limit]
 
     else:
-        print('test003')
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required. Provide either Authorization header (Bearer token) or X-API-Key header."

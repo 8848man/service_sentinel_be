@@ -40,6 +40,23 @@ def init_firebase():
         return
 
     firebase_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
+    firebase_json_path = os.getenv("FIREBASE_CREDENTIALS_JSON_PATH")
+
+    # 🔥 JSON이 실제 JSON이 아닐 경우 무효화
+    if firebase_json:
+        try:
+            json.loads(firebase_json)
+        except json.JSONDecodeError:
+            logger.warning(
+                "FIREBASE_CREDENTIALS_JSON is not valid JSON. Ignoring it."
+            )
+            firebase_json = None
+
+    # 🔹 로컬 fallback: path → json string
+    if not firebase_json and firebase_json_path:
+        logger.info("Loading Firebase credentials from JSON file path")
+        with open(firebase_json_path, "r", encoding="utf-8") as f:
+            firebase_json = f.read()
 
     if firebase_json:
         logger.info("Using Firebase credentials from environment variable")
