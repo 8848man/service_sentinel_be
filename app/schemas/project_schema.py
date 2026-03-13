@@ -15,25 +15,10 @@ class ProjectUpdate(BaseModel):
     description: Optional[str] = None
     is_active: Optional[bool] = None
 
-
-class ProjectResponse(BaseModel):
-    """Schema for project response"""
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    name: str
-    description: Optional[str]
-    is_active: bool
-    created_at: datetime
-    updated_at: datetime
-
-
-class ProjectWithStats(ProjectResponse):
-    """Project response with additional statistics"""
-    total_services: int = 0
-    active_services: int = 0
-    total_incidents: int = 0
-    open_incidents: int = 0
+class ProjectHealthSummary(BaseModel):
+    status: str  # "HEALTHY" | "DEGRADED" | "UNKNOWN"
+    total_services: int
+    error_services: int
 
 
 class ProjectHealth(BaseModel):
@@ -45,6 +30,24 @@ class ProjectHealth(BaseModel):
     inactive_services: int
     active_incidents: int
 
+class ProjectResponse(BaseModel):
+    """Schema for project response"""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    description: Optional[str]
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+    health: Optional[ProjectHealth] = None
+
+class ProjectWithStats(ProjectResponse):
+    """Project response with additional statistics"""
+    total_services: int = 0
+    active_services: int = 0
+    total_incidents: int = 0
+    open_incidents: int = 0
 
 class ProjectWithHealth(ProjectResponse):
     """Project response with derived health status"""

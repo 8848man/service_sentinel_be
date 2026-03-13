@@ -7,11 +7,17 @@ import httpx
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
+from app.core.notification.policies.project import ProjectPolicy
+from app.core.notification.policies.service import ServicePolicy
 from app.models.service import Service
 from app.models.health_check import HealthCheck
+from app.repositories.device_token_repository import DeviceTokenRepository
 from app.repositories.service_repository import ServiceRepository
 from app.repositories.health_check_repository import HealthCheckRepository
 from app.services.incident_service import IncidentService
+from app.services.notification.context_factory import NotificationContextFactory
+from app.services.notification.senders.firebase_sender import FirebasePushNotificationSender
+from app.services.notification.usecase import NotifyIncidentUseCase
 
 logger = logging.getLogger(__name__)
 
@@ -171,9 +177,19 @@ class MonitoringWorker:
                     logger.error(f"Failed to check service {service.id}: {result}")
                     continue
 
+                sender = FirebasePushNotificationSender()
+
+                notify_uc = NotifyIncidentUseCase(
+                    policies=[
+                        ProjectPolicy(),
+                        ServicePolicy(),
+                    ],
+                    sender=sender,
+                )
+
                 if not result.is_alive:
                     # Failure detected - check if incident should be created/updated
-                    await incident_service.handle_failure(service, result)
+                    await incident_service.handle_failure(service, result, notification_uc= notify_uc)
                     logger.warning(
                         f"Service {service.name} health check failed: "
                         f"{result.error_type} - {result.error_message}"

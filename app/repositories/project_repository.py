@@ -2,6 +2,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from app.models.project import Project
+from app.schemas.project_schema import ProjectHealth, ProjectResponse
 
 
 class ProjectRepository:
@@ -230,3 +231,103 @@ class ProjectRepository:
             "inactive_services": state_map[ServiceState.INACTIVE],
             "active_incidents": active_incidents
         }
+
+    def get_health_map(
+            self,
+            project_ids: list[int],
+    ) -> dict[int, ProjectHealth]:
+        """
+        Calculate derived project health for multiple projects at once.
+        NEVER stores this data - always calculated on-demand.
+
+        Returns:
+            dict mapping:
+                project_id -> ProjectHealth
+        """
+        from app.models.service import Service, ServiceState
+        from app.models.incident import Incident, IncidentStatus
+        from sqlalchemy import func
+
+        if not project_ids:
+            return {}
+
+        # -----------------------------
+        # 1. 서비스 상태 집계 (project_id + service_state)
+        # -----------------------------
+        service_counts = self.db.query(
+            Service.project_id,
+            Service.service_state,
+            func.count(Service.id).label("count"),
+        ).filter(
+            Service.project_id.in_(project_ids)
+        ).group_by(
+            Service.project_id,
+            Service.service_state,
+        ).all()
+
+        # project_id -> {ServiceState: count}
+        service_state_map: dict[int, dict[ServiceState, int]] = {
+            pid: {state: 0 for state in ServiceState}
+            for pid in project_ids
+        }
+
+        for project_id, state, count in service_counts:
+            service_state_map[project_id][state] = count
+
+        # -----------------------------
+        # 2. 활성 incident 집계
+        # -----------------------------
+        incident_counts = self.db.query(
+            Service.project_id,
+            func.count(Incident.id).label("count"),
+        ).join(Service).filter(
+            Service.project_id.in_(project_ids),
+            Incident.status.in_([
+                IncidentStatus.OPEN,
+                IncidentStatus.INVESTIGATING,
+            ])
+        ).group_by(
+            Service.project_id
+        ).all()
+
+        # project_id -> active_incident_count
+        incident_map: dict[int, int] = {
+            project_id: count
+            for project_id, count in incident_counts
+        }
+
+        # -----------------------------
+        # 3. ProjectHealth 생성
+        # -----------------------------
+        health_map: dict[int, ProjectHealth] = {}
+
+        for project_id in project_ids:
+            state_map = service_state_map[project_id]
+            total_services = sum(state_map.values())
+            active_incidents = incident_map.get(project_id, 0)
+
+            if total_services == 0:
+                status = "NOSERVICE"
+            elif state_map[ServiceState.ERROR] > 0 or active_incidents > 0:
+                status = "DEGRADED"
+            else:
+                status = "HEALTHY"
+
+            health_map[project_id] = ProjectHealth(
+                status=status,
+                total_services=total_services,
+                healthy_services=state_map[ServiceState.HEALTHY],
+                error_services=state_map[ServiceState.ERROR],
+                inactive_services=state_map[ServiceState.INACTIVE],
+                active_incidents=active_incidents,
+            )
+
+        return health_map
+
+    def calculate_health_for_projects(self, projects: list[Project]) -> None:
+        project_ids = [p.id for p in projects]
+
+        health_map = self.get_health_map(project_ids)
+
+        for project in projects:
+            project.health = health_map.get(project.id)

@@ -21,13 +21,9 @@ def verify_firebase_token(token: str) -> dict:
 
         # Firebase 앱 정보 확인
         app = firebase_admin.get_app()
-        print(f"Firebase App Name: {app.name}")
-        print(f"Firebase Project ID: {app.project_id}")
 
-        # 또는 credentials에서 직접 확인
-        print(f"Credentials Project ID: {app.credential.project_id}")
         decoded_token = firebase_auth.verify_id_token(token)
-        print(decoded_token)
+
         return decoded_token
     except firebase_auth.InvalidIdTokenError:
         raise HTTPException(
@@ -264,3 +260,12 @@ async def get_firebase_user(
         )
 
     return user
+
+async def delete_firebase_user(firebase_uid: str):
+    try:
+        firebase_auth.delete_user(firebase_uid)
+    except firebase_auth.UserNotFoundError:
+        # 이미 삭제된 경우는 무시해도 됨
+        pass
+    except Exception as e:
+        raise e

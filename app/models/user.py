@@ -21,4 +21,11 @@ class User(Base):
     last_login_at = Column(DateTime(timezone=True))
 
     # Relationships
-    projects = relationship("Project", back_populates="owner", cascade="all, delete-orphan")
+    projects = relationship("Project", back_populates="owner", cascade="all, delete-orphan",)
+
+    device_tokens = relationship(
+        "UserDeviceToken",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="noload",
+    )

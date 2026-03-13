@@ -1,0 +1,19 @@
+## on devlop env
+uvicorn app.main:app --reload
+
+### docker and GCP push flow
+### make sure {database_url} having currect value
+// 도커 이미지 빌드
+docker build -t asia-northeast3-docker.pkg.dev/service-sentinel-484005/service-sentinel/service-sentinel:latest .
+
+// 도커 이미지 GCP에 푸쉬
+docker push asia-northeast3-docker.pkg.dev/service-sentinel-484005/service-sentinel/service-sentinel:latest
+
+// 아래의 조건으로 cloud run
+gcloud run deploy service-sentinel `
+ --image asia-northeast3-docker.pkg.dev/service-sentinel-484005/service-sentinel/service-sentinel:latest `
+  --platform managed `
+  --region asia-northeast3 `
+   --allow-unauthenticated `
+ --port 8080 `
+ --set-env-vars "GOOGLE_CLOUD_PROJECT=service-sentinel-484005,CORS_ORIGINS=https://service-sentinel-3e299.web.app, DATABASE_URL=${database_url}"

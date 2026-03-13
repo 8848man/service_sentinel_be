@@ -2,7 +2,7 @@ import logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
-from app.services.monitoring_worker import MonitoringWorker
+from app.services.monitoring.monitoring_worker import MonitoringWorker
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)

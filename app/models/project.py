@@ -23,6 +23,9 @@ class Project(Base):
     # Project status
     is_active = Column(Boolean, default=True, index=True)
 
+    # notification options
+    notification_enabled = Column(Boolean, nullable=True)
+
     # Metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

@@ -13,6 +13,7 @@ from app.api import services, incidents, dashboard
 from app.api import projects, services_v2, incidents_v2, dashboard_v2
 from app.api.v3 import projects as projects_v3, services as services_v3
 from app.api.v3 import incidents as incidents_v3, dashboard as dashboard_v3
+from app.api.v3 import user as user_v3, device_token as device_token_v3
 from app.core.database import get_db, engine, Base
 from app.core.config import settings
 from app.core.firebase import init_firebase
@@ -90,6 +91,8 @@ app.include_router(services_v3.router, prefix="/api/v3")
 app.include_router(incidents_v3.router, prefix="/api/v3")
 app.include_router(dashboard_v3.router, prefix="/api/v3")
 app.include_router(dashboard_v3.global_router, prefix="/api/v3")
+app.include_router(user_v3.router, prefix="/api/v3")
+app.include_router(device_token_v3.router, prefix="/api/v3")
 
 
 @app.get("/")

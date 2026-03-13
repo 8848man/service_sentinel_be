@@ -57,3 +57,12 @@ class UserRepository:
         user.last_login_at = datetime.utcnow()
         self.db.commit()
         return True
+
+    def delete_by_firebase_uid(self, firebase_uid: str):
+        user = self.find_by_firebase_uid(firebase_uid)
+        if not user:
+            return None
+
+        self.db.delete(user)
+        self.db.commit()
+        return user
