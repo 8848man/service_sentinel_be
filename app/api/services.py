@@ -1,8 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Optional
-import time
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -21,7 +19,7 @@ from app.schemas.health_check_schema import (
     HealthCheckListResponse
 )
 from app.schemas.incident_schema import IncidentWithService
-from app.services.monitoring_worker import MonitoringWorker
+from app.services.monitoring.monitoring_worker import MonitoringWorker
 
 router = APIRouter(prefix="/services", tags=["Services"])
 

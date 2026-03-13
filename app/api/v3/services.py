@@ -21,7 +21,7 @@ from app.schemas.health_check_schema import (
     HealthCheckListResponse
 )
 from app.schemas.incident_schema import IncidentWithService
-from app.services.monitoring_worker import MonitoringWorker
+from app.services.monitoring.monitoring_worker import MonitoringWorker
 
 router = APIRouter(prefix="/projects/{project_id}", tags=["Services (v3)"])
 

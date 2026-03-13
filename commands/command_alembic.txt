@@ -1,0 +1,13 @@
+## generate alembic revision
+alembic revision --autogenerate -m "{message}"
+## after this command, must read /alembic/versions/{revision_file}
+## and make sure changes are on your intent
+
+## check what your current branch is
+alembic current
+
+## check what is current migration changes
+alembic history --verbose
+
+## upgrade your Database to head
+alembic upgrade head

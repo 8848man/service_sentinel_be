@@ -2,22 +2,26 @@ import logging
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
+from app.core.notification.context import NotificationContext
 from app.models.service import Service
 from app.models.health_check import HealthCheck
 from app.models.incident import Incident, IncidentStatus, IncidentSeverity
+from app.repositories.device_token_repository import DeviceTokenRepository
 from app.repositories.incident_repository import IncidentRepository
 from app.repositories.health_check_repository import HealthCheckRepository
+from app.services.notification.context_factory import NotificationContextFactory
+from app.services.notification.usecase import NotifyIncidentUseCase
 
 logger = logging.getLogger(__name__)
 
 
 class IncidentService:
-    def __init__(self, db: Session):
+    def __init__(self, db: Session,):
         self.db = db
         self.incident_repo = IncidentRepository(db)
         self.health_repo = HealthCheckRepository(db)
 
-    async def handle_failure(self, service: Service, failed_check: HealthCheck):
+    async def handle_failure(self, service: Service, failed_check: HealthCheck, notification_uc: NotifyIncidentUseCase):
         """Handle a failed health check - create or update incident"""
 
         # Check if there's already an open incident
@@ -76,7 +80,16 @@ class IncidentService:
                     f"Service state transitioned to ERROR"
                 )
 
+                factory = NotificationContextFactory(self.db)
+                ctx = factory.create_for_incident(
+                    project=service.project,
+                    service=service,
+                    incident=incident,
+                )
+
                 # TODO: Trigger notification
+                notification_uc.execute(ctx)
+
                 # TODO: Queue AI analysis if enabled
 
     async def resolve_if_healthy(self, service: Service):
@@ -109,6 +122,16 @@ class IncidentService:
                     f"Auto-resolved incident {open_incident.id} for service {service.name}. "
                     f"Service state transitioned to HEALTHY"
                 )
+
+                # factory = NotificationContextFactory(self.db)
+                # ctx = factory.create_for_incident(
+                #     project=service.project,
+                #     service=service,
+                #     incident=incident,
+                # )
+                #
+                # # TODO: Trigger notification
+                # notification_uc.execute(ctx)
 
     def _count_recent_failures(self, service_id: int, lookback_minutes: float) -> int:
         """Count failures in recent time window"""
