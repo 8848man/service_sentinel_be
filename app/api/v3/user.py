@@ -12,7 +12,6 @@ async def delete_current_user(
     authorization: Optional[str] = Header(None),
     db: Session = Depends(get_db),
 ):
-    print('test001, delete current user')
     """
     Delete currently authenticated Firebase user.
 
@@ -37,7 +36,6 @@ async def delete_current_user(
         db=db
     )
 
-    print('test002, user is $user', user)
     await delete_firebase_user(user.firebase_uid)
 
     # 유저 삭제
